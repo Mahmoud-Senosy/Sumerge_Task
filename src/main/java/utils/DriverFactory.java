@@ -1,8 +1,8 @@
 package utils;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import io.github.bonigarcia.wdm.WebDriverManager;
 
 public class DriverFactory {
     private static WebDriver driver;
@@ -11,8 +11,6 @@ public class DriverFactory {
         if (driver == null) {
             // WebDriverManager automatically handles driver setup and version compatibility
             WebDriverManager.chromedriver().setup();
-
-            // Initialize ChromeDriver
             driver = new ChromeDriver();
         }
         return driver;

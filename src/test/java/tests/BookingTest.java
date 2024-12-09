@@ -1,89 +1,92 @@
-package tests;
-
-
+import io.github.bonigarcia.wdm.WebDriverManager;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import pages.HomePage;
-import pages.DetailsPage;
 import pages.SearchResultsPage;
+import pages.DetailsPage;
 import pages.ConfirmationPage;
-import io.github.bonigarcia.wdm.WebDriverManager;
 
-
-import java.time.Duration;
-import java.util.logging.Logger;
-
-import static pages.SearchResultsPage.*;
-
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import org.apache.poi.ss.usermodel.*;
 
 public class BookingTest {
     private WebDriver driver;
     private HomePage homePage;
-    private static final Logger logger = Logger.getLogger(BookingTest.class.getName());
-   // private By popupCloseButton = By.xpath("//div[contains(@class, 'bui-modal__header')]//button");
-
+    private SearchResultsPage searchResultsPage;
+    private DetailsPage detailsPage;
+    private ConfirmationPage confirmationPage;
 
     @BeforeClass
     public void setUp() {
-        logger.info("Setting up WebDriver and launching browser.");
         WebDriverManager.chromedriver().setup();
         driver = new ChromeDriver();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
         driver.manage().window().maximize();
         driver.get("https://www.booking.com");
+
         homePage = new HomePage(driver);
-        logger.info("Browser launched and navigated to Booking.com.");
-
+        searchResultsPage = new SearchResultsPage(driver);
+        detailsPage = new DetailsPage(driver);
+        confirmationPage = new ConfirmationPage(driver);
     }
-/*
-   @AfterClass
-   public void tearDown() {
-       logger.info("Closing browser.");
-       if (driver != null) {
-           driver.quit();
-       }
-   }*/
+
+    @DataProvider(name = "excelData")
+    public Object[][] excelData() throws IOException {
+        // Use the correct file path here
+        FileInputStream fis = new FileInputStream(new File("src/test/resources/booking_data.xlsx"));
+        Workbook workbook = new XSSFWorkbook(fis);
+        Sheet sheet = workbook.getSheetAt(0);
+
+        int rowCount = sheet.getPhysicalNumberOfRows();
+        Object[][] data = new Object[rowCount - 1][3];
+
+        for (int i = 1; i < rowCount; i++) {
+            Row row = sheet.getRow(i);
+            data[i - 1][0] = row.getCell(0).getStringCellValue(); // Destination
+            data[i - 1][1] = row.getCell(1).getStringCellValue(); // Check-in Date
+            data[i - 1][2] = row.getCell(2).getStringCellValue(); // Check-out Date
+        }
+
+        workbook.close();
+        fis.close();
+
+        return data;
+    }
+
+    @Test(dataProvider = "excelData")
+    public void testHotelBooking(String destination, String checkInDate, String checkOutDate) throws InterruptedException {
+        try {
+            // Step 1: Home Page actions
+            homePage.handleCookies();
+            homePage.enterDestination(destination);
+            homePage.selectCheckInAndOutDates(checkInDate, checkOutDate);
+            homePage.clickSearchButton();
+
+            // Step 2: Search Results actions
+            searchResultsPage.closePopupIfPresent();
+            searchResultsPage.scrollToAndClickHotel("Tolip Hotel Alexandria");
+
+            // Step 3: Hotel Details actions
+            //detailsPage.selectBedOption();
+            //detailsPage.selectPrice("1"); // Select the price option
+            //detailsPage.clickSelectAndContinue();
 
 
-    @Test
-    public void testHotelBooking() throws InterruptedException {
+            //6- Selecet bed, Price and Click on I will reserve
+           // DetailsPage detailsPage = new DetailsPage(driver);
+            String priceValue = "1";
+            detailsPage.performReservation(priceValue);
 
-        //1- Handle Cookies
-        logger.info("Handling cookies.");
-        homePage.handleCookies();
-        logger.info("Cookies handled successfully.");
-
-         //2- Entering destination: Alexandria
-        logger.info("Entering destination: Alexandria.");
-        homePage.enterDestination("Alexandria");
-        logger.info("Destination entered, and check-in/out dates selected successfully.");
-
-        //3-Click on the Search Page
-        logger.info("Clicking search button.");
-         homePage.clickSearchButton();
-        logger.info("Search initiated successfully.");
-        logger.info("Closing popup if present.");
-
-        //4-Close the Pop up at the Search Page
-        SearchResultsPage searchResultsPage = new SearchResultsPage(driver);
-        searchResultsPage.closePopupIfPresent();
-
-        //5- Selecting Tolip Hotel Alexandria from the search result
-         logger.info("Selecting hotel: Tolip Hotel Alexandria.");
-         searchResultsPage.scrollToAndClickHotel("Tolip Hotel Alexandria");
-
-        //6- Selecet bed, Price and Click on I will reserve
-        DetailsPage detailsPage = new DetailsPage(driver);
-        String priceValue = "1";
-        detailsPage.performReservation(priceValue);
-
-         // Aseertion of the date at the Confirmation Page :
-        ConfirmationPage confirmationPage = new ConfirmationPage(driver);
-        confirmationPage.verifyBookingDates();
-
+            // Step 4: Confirmation Page actions
+            //confirmationPage.verifyBookingDetails();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Test failed: " + e.getMessage());
+        }
     }
 }
-

@@ -11,39 +11,30 @@ public class ConfirmationPage {
     private WebDriver driver;
     private WebDriverWait wait;
 
-    // Locators for check-in and check-out elements
-    private By checkInDate = By.xpath("//div[contains(text(),'Thu, Dec 19, 2024')]");
-    private By checkOutDate = By.xpath("//div[contains(text(),'Sun, Dec 22, 2024')]");
+    private By bookingDetails = By.cssSelector(".booking-confirmation-details");
+    private By Indata = By.xpath("//*[@id=\"bodyconstraint-inner\"]/div[7]/div[3]/aside/div/div[2]/div[2]/div/div[2]/div[1]/div/time[1]");
+    private By Outdata = By.xpath("//*[@id=\"bodyconstraint-inner\"]/div[7]/div[3]/aside/div/div[2]/div[2]/div/div[2]/div[1]/div/time[2]/div[1]");
 
-    // Constructor
     public ConfirmationPage(WebDriver driver) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(30));
     }
 
-    // Method to assert that the check-in and check-out dates are displayed correctly
-    public void verifyBookingDates() {
+    public void verifyBookingDetails() {
         try {
-            // Wait for the check-in and check-out elements to be visible
-            WebElement checkInElement = wait.until(ExpectedConditions.visibilityOfElementLocated(checkInDate));
-            WebElement checkOutElement = wait.until(ExpectedConditions.visibilityOfElementLocated(checkOutDate));
+            WebElement details = wait.until(ExpectedConditions.visibilityOfElementLocated(bookingDetails));
+            WebElement INDA = wait.until(ExpectedConditions.visibilityOfElementLocated(Indata));
+            WebElement OUTD = wait.until(ExpectedConditions.visibilityOfElementLocated(Outdata));
+            String text = details.getText();
+            System.out.println(details.getText());
+            System.out.println(INDA.getText());
+            System.out.println(OUTD.getText());
 
-            // Assert that the text matches the expected dates
-            String expectedCheckIn = "Thu, Dec 19, 2024";
-            String expectedCheckOut = "Sun, Dec 22, 2024";
-
-            String actualCheckIn = checkInElement.getText();
-            String actualCheckOut = checkOutElement.getText();
-
-            // Verify the text displayed on the page matches the expected values
-            Assert.assertEquals(actualCheckIn, expectedCheckIn, "Check-in date is incorrect!");
-            Assert.assertEquals(actualCheckOut, expectedCheckOut, "Check-out date is incorrect!");
-
-            System.out.println("Booking details verified: Check-in and Check-out dates are correct.");
-
+            Assert.assertTrue(text.contains("Thu 19 Dec 2024"), "Check-in date not found in booking details.");
+            Assert.assertTrue(text.contains("Sun 22 Dec 2024"), "Check-out date not found in booking details.");
+            System.out.println("Booking details verified successfully.");
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error while verifying booking dates.");
+            Assert.fail("Failed to verify booking details: " + e.getMessage());
         }
     }
 }

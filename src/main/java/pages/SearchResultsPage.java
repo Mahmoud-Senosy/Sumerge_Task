@@ -30,60 +30,52 @@ public class SearchResultsPage {
     // Close the popup if it is present
     public void closePopupIfPresent() {
         try {
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10)); // Increased timeout
             boolean popupClosed = false;
 
-            // Loop to retry if the popup is still visible
+            // Retry loop to ensure the popup is handled properly
             for (int i = 0; i < 3 && !popupClosed; i++) {
                 try {
-                    // Wait for the popup close button to be clickable or try to click anywhere on the page
+                    // Wait for the popup close button to be clickable
                     WebElement closeButton = wait.until(ExpectedConditions.elementToBeClickable(PopupCloseButton));
-                    if (closeButton.isDisplayed()) {
-                        closeButton.click();
-                        System.out.println("Popup closed using close button.");
-                        popupClosed = true;
-                    } else {
-                        // If close button isn't working, click somewhere outside the popup (e.g., body)
+                    closeButton.click();
+                    System.out.println("Popup closed using close button.");
+                    popupClosed = true;
+                } catch (TimeoutException | NoSuchElementException e) {
+                    // If close button is not interactable, click outside the popup
+                    try {
                         WebElement background = wait.until(ExpectedConditions.elementToBeClickable(pageBackground));
                         background.click();
-                        System.out.println("Popup closed by clicking background.");
+                        System.out.println("Popup closed by clicking the background.");
                         popupClosed = true;
+                    } catch (Exception ignored) {
+                        System.out.println("Failed to close popup by clicking background.");
                     }
-                } catch (TimeoutException | NoSuchElementException e) {
-                    // No popup found, or popup button not clickable
-                    System.out.println("Popup not found or not interactable on attempt " + (i + 1));
                 }
-                // Optionally add some wait time before retrying
-                Thread.sleep(1000);  // Add delay before retrying
+                // Wait before retrying
+                Thread.sleep(1000);
             }
 
             if (!popupClosed) {
-                System.out.println("Popup handling completed or no popup appeared.");
+                System.out.println("No popup appeared, or it has already been handled.");
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("Error while closing popup.");
+            throw new RuntimeException("Error while handling popup.");
         }
     }
 
-    // Select a specific hotel
+    // Scroll to and select a specific hotel
     public void scrollToAndClickHotel(String hotelName) {
         try {
-            JavascriptExecutor jsExecutor = (JavascriptExecutor) driver;
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(1));
-
-
             boolean hotelFound = false;
-            int maxScrollAttempts = 10; // Limit to prevent infinite loops
+            int maxScrollAttempts = 10; // Prevent infinite loops
             int currentScrollAttempts = 0;
-
 
             while (!hotelFound && currentScrollAttempts < maxScrollAttempts) {
                 try {
-                    // Locate the hotel element by `data-testid` and the name
+                    // Locate the hotel element by its name
                     List<WebElement> hotels = driver.findElements(By.xpath("//div[@data-testid='title' and text()='" + hotelName + "']"));
-
 
                     for (WebElement hotel : hotels) {
                         if (hotel.isDisplayed()) {
@@ -96,7 +88,6 @@ public class SearchResultsPage {
                         }
                     }
 
-
                     if (!hotelFound) {
                         // Scroll down further if the hotel is not visible
                         jsExecutor.executeScript("window.scrollBy(0, 500);");
@@ -105,11 +96,10 @@ public class SearchResultsPage {
                 } catch (ElementClickInterceptedException e) {
                     // Handle popups or overlays blocking the element
                     System.out.println("Popup detected; attempting to close it...");
-                    handlePopup();
+                    closePopupIfPresent();
                 }
                 currentScrollAttempts++;
             }
-
 
             if (!hotelFound) {
                 throw new RuntimeException("Hotel not found after maximum scroll attempts: " + hotelName);
@@ -119,21 +109,6 @@ public class SearchResultsPage {
             throw new RuntimeException("Error occurred while scrolling and clicking hotel: " + hotelName);
         }
     }
-
-
-    // Method to handle popups
-    private void handlePopup() {
-        try {
-            WebElement popupCloseButton = driver.findElement(By.cssSelector("button[aria-label='Close']"));
-            popupCloseButton.click();
-            System.out.println("Popup closed successfully.");
-        } catch (NoSuchElementException ignored) {
-            System.out.println("No popup found to close.");
-        }
-    }
-
-
-
 
     // Check if the next page button is available
     private static boolean isNextPageAvailable() {
@@ -145,7 +120,6 @@ public class SearchResultsPage {
         }
     }
 
-
     // Navigate to the next page
     private static void goToNextPage() {
         try {
@@ -156,11 +130,4 @@ public class SearchResultsPage {
             Assert.fail("Failed to navigate to the next page: " + e.getMessage());
         }
     }
-
-
-
-
-
-
 }
-

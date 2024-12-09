@@ -1,0 +1,1 @@
+{"uuid":"5ae68590-0b86-4d14-9b8b-21394e9681b9","name":"tests.BookingTest","children":["56ea4277-8f40-42af-9842-ebd3839564b8"],"befores":[{"name":"setUp","status":"passed","stage":"finished","description":"","steps":[],"attachments":[],"parameters":[],"start":1733740334844,"stop":1733740343745}],"afters":[],"start":1733740334764,"stop":1733740469002}
